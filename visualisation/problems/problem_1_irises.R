@@ -31,9 +31,8 @@ nlevels(slengths)
 irises[Species=="setosa",]$Petal.Width
 
 #2: Make a Histogram with: 20 bins of Petal width fot the Iris Setosa
-hist(irises[Species=="setosa",]$Petal.Width)
-hist(irises[Species=="setosa",]$Petal.Width, main="Irises",xlab="X",ylab="Y")
-legend("topright", c("Germany", "Plastic"), col=c("blue", "red"), lwd=10)
+hist(irises[Species=="setosa",]$Petal.Width) #seq(0,0.5,length=20)
+hist(irises[Species=="setosa",]$Petal.Width, main="Irises",xlab="Petal width",ylab="Frequency",breaks=20)
 
 install.packages("ggplot2")
 library(ggplot2)
