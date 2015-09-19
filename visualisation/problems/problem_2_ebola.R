@@ -67,8 +67,12 @@ ddeaths$sum <- ddeaths$confirmed + ddeaths$probable + ddeaths$total
 #dsum <- aggregate(ddeaths$date, by=list(ddeaths$country), FUN=sum)
 #ggplot2::qplot(dsum$Group.1,dsum$x)
 library(scales)
+library(ggplot2)
 ddeaths$date <- as.Date(ddeaths$date)
-gg2 <- ggplot2::qplot(ddeaths$date,ddeaths$sum, color=ddeaths$country, main="Total Ebola deaths over time",xlab="Months in 2014",ylab="Amount of deaths (persons confirmed with Ebola)")
+#Find the total Deaths per date
+ddeaths <- aggregate(ddeaths$sum, by=list(ddeaths$date), sum)
+names(ddeaths) <- (c("date", "sum"))
+gg2 <- ggplot2::qplot(ddeaths$date,ddeaths$sum, main="Total Ebola deaths over time",xlab="Months in 2014",ylab="Amount of deaths (persons confirmed with Ebola)")
 gg2 <- gg2 + scale_x_date(label = date_format("%b"),
                     breaks = seq(min(ddeaths$date), max(ddeaths$date), "month")
                     )
@@ -77,15 +81,19 @@ gg2
 
 #3: New infections occur; date
 dcases <- ds[ds$category==" cases",]
-dcountries <- split(dcases, dcases$country, drop=T)
-for (i in 1:length(dcountries)) {
-  dcountry <- dcountries[[i]]
-  
-  print( as.character(dcountry[["country"]]) )
-  dcountrymin <- min(as.Date(dcountry$date))
-  
-  print( dcountrymin )
-}
+#dcountries <- split(dcases, dcases$country, drop=T)
+#for (i in 1:length(dcountries)) {
+#  dcountry <- dcountries[[i]]
+#  
+#  print( as.character(dcountry[["country"]]) )
+#  dcountrymin <- min(as.Date(dcountry$date))
+#  
+#  print( dcountrymin )
+#}
+dcases$date <- as.Date(dcases$date)
+dcases <- aggregate(dcases$date, by=list(as.character(dcases$country)), min)
+names(dcases) <- (c("country", "date"))
+hist(dcases$date, dcases$country, breaks=9,xlab="Months",ylab="Occurrences (less is better)", main="New first occurrences of invected Ebola countries")
 
 #4: Per country confirmed Cases totals per month
 dcases = ds[ds$category==" cases",]
@@ -97,3 +105,5 @@ gg4 <- gg4 + scale_x_date(label = date_format("%b"),
 )
 gg4 <- gg4 + labs(color = "Countries") + geom_line()
 gg4
+
+#5:
