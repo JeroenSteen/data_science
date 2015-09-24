@@ -38,17 +38,37 @@ barplot(
 )
 
 
-#Survivors and deceased per Age
-levels(factor(survivors$Age))
 #b3:
-hist(
-  survivors$Age,
-  breaks=80,
-  xlab="Ages (year)",ylab="Amount of survivors",
-  main="Survivors Titanic per Age"
-  )
+female_survivors <- survivors[survivors$Sex == "female",]
+male_survivors <- survivors[survivors$Sex == "male",]
+female_deceased <- deceased[deceased$Sex == "female",]
+male_deceased <- deceased[deceased$Sex == "male",]
+
+library(plyr)
+female_survivors <- count(female_survivors, c("Survived"))$freq
+male_survivors <- count(male_survivors, c("Survived"))$freq
+female_deceased <- count(female_deceased, c("Survived"))$freq
+male_deceased <- count(male_deceased, c("Survived"))$freq
+
+barplot(
+  c(female_survivors, male_survivors, female_deceased, male_deceased),
+  names.arg=c("Female survivors", "Male survivors", "Female deceased", "Male deceased"),
+  main="Survivors and Deceased based on Sex",
+  xlab="Survivors and Deceased by Sex",
+  ylab="Amount of passengers",
+  col=c("pink", "lightblue", "pink", "lightblue")
+)
 
 #b4:
+embarkations <- train[train$Embarked != "",]
+embarkations <- count(embarkations$Embarked)
+barplot(embarkations$freq,
+        names.arg=c("Cherbourg", "Queenstown", "Southampton"),
+        main="Passangers per Port of Embarkation",
+        xlab="Ports of Embarkations",
+        ylab="Amount of passengers"
+        )
+
 
 #c: Find the mean and ds of Age
 mAge <- mean(train$Age, na.rm=T)

@@ -11,12 +11,12 @@ plot(ds$Afstand..m., ds$Gewicht..kg., type="o")
 #Linear correlation
 plot(2*1:10+1)
 
-#Exponential correlation
+#1: Exponential correlation
 plot ( 1:10 * 2 ^ 0:10 )
 plot ( 1:10 * (2 ^ 0:10) )
 plot ( 1:10 * (2 ^ 0:10) * (2 ^ 0:10) )
 
-#2
+#2:
 x = -10:10
 y = (1.5 ^ 1.5) ^ x
 plot(x, y)
@@ -25,4 +25,13 @@ plot(x, y)
 x = 1:10 
 y = log(x,2)
 plot(x,y)
+
+#4: Cubic function
+x = -10:10
+#Swirl
+plot(1*x^3 + 2*x^2 + 3*x + 1)
+#Or sign
+plot(2*x^4 + 6*x - 5)
+
+#5
 
