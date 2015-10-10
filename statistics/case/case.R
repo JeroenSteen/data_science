@@ -103,3 +103,28 @@ pnorm(50,mAge,sdAge) - pnorm(20,mAge,sdAge)
 
 #probability that a passenger is older than 65
 pnorm(max(train$Age, na.rm=T), mAge,sdAge) - pnorm(65,mAge,sdAge)
+
+#e: question 1
+females <- train[train$Sex == "female",]
+males <- train[train$Sex == "male",]
+t.test(females$Survived, males$Survived, alternative="two.sided")
+
+#question 2
+criticals <- train[train$Age <= 8 | train$Age >= 65,]
+noncriticals <- train[train$Age >= 8 | train$Age <= 65,]
+t.test(noncriticals$Survived, criticals$Survived, alternative="greater")
+
+#question 3
+ps1 <- train[train$Pclass == 1,]
+ps2 <- train[train$Pclass == 2,]
+ps3 <- train[train$Pclass == 3,]
+
+sum(ps3$Survived == T) #119
+sum(ps2$Survived == T) #87
+sum(ps1$Survived == T) #136
+
+#Alternative: Is a/Higher class survivors greather then b/Opposite
+t.test(ps1$Survived, ps2$Survived, alternative="greater") #Rejected null hypothesis, 0 is not in conf
+t.test(ps1$Survived, ps3$Survived, alternative="greater") #Rejected null hypothesis, 0 is not in conf
+t.test(ps2$Survived, ps1$Survived, alternative="greater") #Accepted null hypothesis, 0 is in conf
+#The higher class only haves a better chance of survival two times
