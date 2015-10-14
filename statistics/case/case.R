@@ -128,3 +128,19 @@ t.test(ps1$Survived, ps2$Survived, alternative="greater") #Rejected null hypothe
 t.test(ps1$Survived, ps3$Survived, alternative="greater") #Rejected null hypothesis, 0 is not in conf
 t.test(ps2$Survived, ps1$Survived, alternative="greater") #Accepted null hypothesis, 0 is in conf
 #The higher class only haves a better chance of survival two times
+
+#f:
+fares <- train$Fare 
+ages <- train$Age
+
+#Linear model: Multiple R-Squared is Low (Bad)
+model <- lm(ages ~ fares)
+
+plot(ages,fares, xlab="Ages", ylab="Fares", main="Fare per age")
+abline(model, col="red")
+
+#Summary: 0.8716
+summary(model)
+
+#predict.lm(model, 15); 15 hours is..
+353.16 + 25.33 * 15 #733.11; intercept + slope * <hours>
