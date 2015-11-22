@@ -11,3 +11,10 @@
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf
+
+/mining/case/ZeroR/nbproject/private/
+/mining/case/ZeroR/build/
+/mining/case/data
+/mining/case/libs
+/mining/books
+/mining/converter

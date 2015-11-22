@@ -78,15 +78,18 @@ dnAge <- dnorm(train$Age,
       mean=mAge,
       sd=sdAge)
 #c1: Plot normal distribution and histogram of Age; one plot..
-hist(train$Age, freq=F, col="lightgrey", xlab="Ages", ylab="Occurences", main="Titanic passengers by Age")
-#curve(
-#  expr=dnorm(train$Age, mean=mAge, sd=sdAge),
-#  col="red",
-#  add=T)
-lines(density(train$Age, na.rm=T), col="red")
+hist(train$Age, freq=F, col="lightgrey", xlab="Ages", ylab="Occurences", main="Titanic passengers by Age", border="blue")
+lines(density(train$Age, na.rm=T), col="darkblue")
+lines(dnorm(0:80,mAge,sdAge), col="red", lwd=2)
+legend("topleft", c("Normal", "Density"), col=c("red", "darkblue"), lwd=5)
+axis(side = 4, col = "red", at=c(0,.01,.02,.03), labels=c(0,50,100,200))
 
 #c2: Q-Q plot for the Age variable
 qqnorm(train$Age, datax=T, ylab = "Years", xlab="Occurences", main="Titanic passengers by Age")
+
+install.packages("car")
+library(car)
+qqPlot(train$Age, main="Titanic passengers by Age", ylab="Ages", xlab="Normal quantiles")
 
 #d: Computements
 ages <- na.omit(train$Age)
@@ -96,13 +99,13 @@ ageN <- length(ages)
 #pbinom(1,ageN,
 #       length(ages[ages < 12]) / ageN
 #       )
-( pnorm(12,mAge,sdAge) - pnorm(0,mAge,sdAge) ) * 100 #0.09108244, 9 percentage
+pnorm(12,mAge,sdAge) * 100 #11.15356 percentage
 
 #probability that a passenger is between 20 and 50 years old
 pnorm(50,mAge,sdAge) - pnorm(20,mAge,sdAge)
 
 #probability that a passenger is older than 65
-pnorm(max(train$Age, na.rm=T), mAge,sdAge) - pnorm(65,mAge,sdAge)
+1 - pnorm(65,mAge,sdAge)
 
 #e: question 1
 females <- train[train$Sex == "female",]
