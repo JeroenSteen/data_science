@@ -7,6 +7,7 @@ import java.io.IOException;
 //Utils
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -36,7 +37,8 @@ public class ZeroR {
             sales.readHeaders();
             //Get all Headers
             //TODO CTRL + 6: Make it dynamic
-            System.out.print(Arrays.toString(sales.getHeaders()));
+            //ArrayList header = sales.getHeaders();
+            System.out.println(sales.getHeaders());
                         
             ArrayList<Map> al = new ArrayList<Map>();
             
@@ -50,12 +52,12 @@ public class ZeroR {
                 String salary       = sales.get("salary");
                 String count        = sales.get("count");
                 //We found the columns..
-                System.out.println(department +" "+ status +" "+ age +" "+ salary +" "+ count);
+                //System.out.println(department +" "+ status +" "+ age +" "+ salary +" "+ count);
                 
                 //Make a map..
                 Map m = new HashMap();
                 m.put("department", department);
-                m.put("department", status);
+                m.put("status", status);
                 m.put("age", age);
                 m.put("salary", salary);
                 m.put("count", count);
@@ -65,7 +67,52 @@ public class ZeroR {
             }
 
             //We have a Array with maps..
-            System.out.print(al);
+            //System.out.print(al);
+            
+            double veelCounter     = 0;
+            double weinigCounter   = 0;
+            
+            for (Map m : al) {
+                //System.out.print(m.get("count"));
+                
+		if( m.get("count").equals("veel")) {
+                    veelCounter++;
+                } else if( m.get("count").equals("weinig")) {
+                    weinigCounter++;
+                }
+            }
+            
+            System.out.println("veel: " + veelCounter);
+            System.out.println("weinig: " + weinigCounter);
+            
+            //Confusion
+            if(veelCounter > weinigCounter) {
+                System.out.println("positive predictive value: " + veelCounter / (veelCounter + weinigCounter) );
+            } else {
+                System.out.println("positive predictive value: " + weinigCounter / (veelCounter + weinigCounter) );
+            }
+            
+            //OneR
+            //predictors
+            ArrayList departments   = new ArrayList<String>();
+            ArrayList statuses      = new ArrayList<String>();
+            ArrayList ages          = new ArrayList<String>();
+            ArrayList salaries      = new ArrayList<String>();
+            ArrayList counts        = new ArrayList<String>();
+            for (Map m : al) {
+                departments.add(m.get("department"));
+                statuses.add(m.get("status"));
+                ages.add(m.get("age"));
+                salaries.add(m.get("salary"));
+                counts.add(m.get("count"));
+            }
+            System.out.println(Collections.frequency(departments, "sales"));
+            System.out.println(Collections.frequency(departments, "systems"));
+            System.out.println(Collections.frequency(departments, "marketing"));
+            System.out.println(Collections.frequency(departments, "secretary"));
+            //all factors
+            //frequency of factor
+            
             //Close the constructed CSV object
             sales.close();
 

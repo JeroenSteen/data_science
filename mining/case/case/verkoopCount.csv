@@ -1,0 +1,12 @@
+department ,status, age, salary, count
+sales, senior, 31…35, 46K…50K,veel
+sales, junior, 26…30, 26K…30K,veel
+sales, junior, 31…35 ,31K…35K,veel
+systems, junior, 21…25, 46K…50K,veel
+systems, senior, 31…35, 66K…70K ,weinig
+systems, junior, 26…30, 46K…50K,weinig
+systems, senior, 41…45, 66K…70K,weinig
+marketing, senior, 36…40, 46K…50K,weinig
+marketing, junior, 31…35, 41K…45K,weinig
+secretary ,senior ,46…50 ,36K…40K,weinig
+secretary ,junior, 26…30 ,26K…30K,weinig
