@@ -1,0 +1,280 @@
+package pkgcase;
+
+//Utils
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+
+public class StatisticalModeling {
+    
+    public static String[] headers;
+    public static String target;
+    public static ArrayList<String> targetValues;
+    public static HashSet<String> targetFactors;
+    
+    //Constructor for Statistical Modeling
+    public StatisticalModeling(CsvObject csv, Map sr) {
+        
+        //Get headers from csv
+        this.headers        = csv.headers;
+        //Find target column, last one
+        this.target         = csv.target;
+        this.targetValues   = csv.targetValues;
+        this.targetFactors  = csv.targetFactors;
+        
+        Map predictors      = constructPredictors(csv);
+        Map counts          = countAssociations(predictors, csv);
+        System.out.println("associations counts: "+counts);
+        Map maxs            = countTargets(csv);
+        System.out.println("target counts: "+maxs);
+        Map probs           = probAssociations(counts, maxs, csv); 
+        System.out.println("associations probs: "+probs);
+        System.out.println(" ");
+        
+        //Statistical record to find his Target value
+        System.out.println("statistical record: "+sr);
+        Map al              = allLikelihoods(sr, probs);
+        
+    }
+    
+    public Map constructPredictors(CsvObject csv) {
+        //Construct predictors
+        Map predictors      = new HashMap();
+        
+        //Find values; by finding his records
+        for(Map r: csv.records) {
+            //Loop predictor columns
+            for (String h : headers) {
+                //Only predictors here; ignore target
+                if(h != this.target) {
+                    
+                    //Find current predictor value
+                    String predictorValue           = r.get(h).toString();
+                    
+                    //Construct new predictor; for setting values
+                    if(predictors.get(h) == null) {
+                        
+                        //Make new list for predictor
+                        ArrayList<String> predictor     = new ArrayList<String>();
+                        //Place value in predictor list
+                        predictor.add(predictorValue);
+                        //Place predictor to other predictors
+                        predictors.put(h, predictor);
+                    } else {
+                        
+                        //Predictor exists, find him
+                        ArrayList<String> predictor     = (ArrayList)predictors.get(h);
+                        //Place value in predictor list
+                        predictor.add(predictorValue);
+                        //Update predictor
+                        predictors.put(h, predictor);
+                    }
+
+                }
+            }
+        }
+        return predictors;
+    }
+    
+    //Count from all Predictors their Factor vs Target Factor occurrences
+    public Map countAssociations(Map predictors, CsvObject csv) {
+        
+        //Make a map to construct the frequency tables per predictor
+        Map ft = new HashMap();
+        //For each predictor
+        for (Object p : predictors.keySet()) {
+            //Find all values
+            ArrayList<String> predictorValues   = (ArrayList)predictors.get(p);
+            //Find factors from values
+            HashSet<String> predictorFactors    = new HashSet<>(predictorValues);
+            
+            //Make new predictor frequency table; for setting counting "factor" <=> "target factor" association
+            Map fp = new HashMap();
+            //Loop all records; for finding target value
+            for(Map record: csv.records) {
+                //Loop all desired target factors
+                for(String predictorFactor: predictorFactors) {
+
+                    for(String targetFactor: this.targetFactors) {
+                        
+                        //Desired target and current count of predict factor; targetFactor, predictorFactor (veel, senior)
+                        if(record.get(target).equals(targetFactor) && record.get(p).equals(predictorFactor)) {
+                            
+                            //Never heard of predictor factor
+                            if(fp.get(predictorFactor) == null) {
+                                
+                                //Never heard of target factor in predictor factor
+                                Map fpt = new HashMap();
+                                fpt.put(targetFactor, 1);
+                                
+                                //Save predictor factor with target counter
+                                fp.put(predictorFactor, fpt);
+                            } else {
+                                //Predictor factor exists..
+                                Map fpt = (Map)fp.get(predictorFactor);
+                                
+                                //But, never heard of target counter
+                                if(fpt.get(targetFactor) == null) {
+                                    
+                                    //Make a target counter
+                                    fpt.put(targetFactor, 1);
+                                    //Save predictor factor with target counter
+                                    fp.put(predictorFactor, fpt);
+                                    
+                                } else {
+                                    //We have a target counter
+                                    int tmpt = (int)fpt.get(targetFactor);
+                                    
+                                    //Save target counter
+                                    fpt.put(targetFactor, ++tmpt);
+                                    //Save predictor factor with target counter
+                                    fp.put(predictorFactor, fpt);
+                                }
+                                
+                            }
+                        } else {
+                            //System.out.println("No match");
+                        }
+
+                    }
+                    
+                }                
+            }
+            
+            ft.put(p, fp);
+        }
+        
+        return ft;
+    }
+    
+    //Find the max frequency of all target factors
+    public Map countTargets(CsvObject csv) {
+        //Make a map for the max frequency for all target factors
+        Map counts = new HashMap();
+        //Find all target factors
+        HashSet<String> targetFactors = this.targetFactors;
+        
+        //Loop all target factors
+        for(String targetFactor: targetFactors) {
+            //For each target factor, find each occurrence
+            for(Map record: csv.records) {
+                //Found desirable target factor
+                if( targetFactor.equals(record.get(this.target)) ){
+                    
+                    //Target factor not counted earlier
+                    if(counts.get(targetFactor) == null) {
+                        counts.put(targetFactor, 1);
+                    } else {
+                        //Target factor is known
+                        int tfreq = (int)counts.get(targetFactor);
+                        //And we see you again, so add one..
+                        counts.put(targetFactor, ++tfreq);
+                    }
+                    
+                }        
+            }
+        }
+
+        return counts;
+    }
+    
+    //Probability from all Predictors their Factor vs Target Factor occurrences
+    public Map probAssociations(Map counts, Map maxs, CsvObject csv) {
+        //Make a map for the probs
+        Map probs = new HashMap();
+        
+        
+        //Loop all target counts
+        for (Object t : maxs.keySet()) {
+            float max = (float)(int)maxs.get(t);
+            
+            //Loop all predictors..
+            for (Object p : counts.keySet()) {
+                //Find the predictor map
+                Map pm = (Map)counts.get(p);
+
+                //Loop all factors in predictor map
+                for (Object f : pm.keySet()) {
+                    //System.out.println("probs of target: "+t+", predictor: "+p+", factor: "+f);
+                    
+                    //Find the factor map
+                    Map fm = (Map)pm.get(f);
+
+                    //Backup association number
+                    float n = 0;
+                    if(fm.get(t) == null) {
+                        n = 0;
+                    } else {
+                        //Find current association for: predictor factor with target factor
+                        n = (int)fm.get(t);
+                    }
+                    
+                    
+                    //Prob = association number / max target factor
+                    float probability = n / max;
+                    
+                    
+                    //Find predictor in probs map
+                    if(probs.get(p) == null) {
+                        //Make a predictor map
+                        Map probsP = new HashMap();
+                        //Make a factor map
+                        Map probsF = new HashMap();
+                        //Place for target: probability
+                        probsF.put(t, probability);
+                        //Place factor map in predictor map
+                        probsP.put(f, probsF);
+                        
+                        //Finally place predictor map in probs
+                        probs.put(p, probsP);
+                    } else {
+                        //Predictor is known
+                        Map probsP = (Map)probs.get(p);                    
+                        //Make a factor map
+                        Map probsF = new HashMap();
+                        //Place for target: probability
+                        probsF.put(t, probability);
+                        //Place factor map in predictor map
+                        probsP.put(f, probsF);
+                        
+                        //Finally place predictor map in probs
+                        probs.put(p, probsP);
+                    }
+                    
+                }     
+            }
+        }
+         
+        return probs;
+    }
+    
+    public Map allLikelihoods(Map sr, Map probs) {
+        //Make a new map for all likelihoods
+        Map al = new HashMap();
+        
+        //Find prob for each factor value from "new statistical record"
+        for (Object f : sr.keySet()) {
+            //Factor
+            String factor   = (String)f;
+            //Factor value
+            String fvalue   = (String)sr.get(f);
+            
+            //Find all target factors
+            HashSet<String> targetFactors = this.targetFactors;
+            //Loop all target factors
+            for(String targetFactor: targetFactors) {
+                //Loop all probs
+                for (Object p : probs.keySet()) {
+                    //likelihood of target factor: p * p * p * overal fraction of target factor
+                    System.out.println("likelihood of: "+f+" "+targetFactor);
+                }
+            }
+        }
+        
+        //Return likelihoods
+        return al;
+    }
+   
+    
+}

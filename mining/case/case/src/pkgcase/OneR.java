@@ -1,3 +1,5 @@
+//Insight: http://www.slideshare.net/dataminingtools/weka-algorithms-the-basic-methods
+
 package pkgcase;
 
 //Utils
@@ -19,7 +21,7 @@ public class OneR {
     public OneR(CsvObject csv) {
         
         //Get headers from csv
-        String[] headers = csv.headers;
+        String[] headers    = csv.headers;
         //Find target column, last one
         this.target         = csv.target;
         this.targetValues   = csv.targetValues;

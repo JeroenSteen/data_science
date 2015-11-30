@@ -1,5 +1,9 @@
 package pkgcase;
 
+//Utils
+import java.util.HashMap;
+import java.util.Map;
+
 public class Case {
 
     /**
@@ -13,15 +17,24 @@ public class Case {
     public void run() {
         
         
-        String csvPath  = "verkoopCount.csv";
+        String csvPath          = "verkoopCount.csv";
         
         System.out.println("*** ZeroR ***");
-        CsvObject csv   = new CsvObject(csvPath);
-        ZeroR zr        = new ZeroR(csv);
+        CsvObject csv           = new CsvObject(csvPath);
+        ZeroR zr                = new ZeroR(csv);
         System.out.println(" ");
         
         System.out.println("*** OneR ***");
-        OneR or         = new OneR(csv);
+        OneR or                 = new OneR(csv);
+        System.out.println(" ");
+        
+        System.out.println("*** Statistical Modeling ***");
+        Map sr                  = new HashMap();
+        sr.put("status", "senior");
+        sr.put("department", "marketing");
+        sr.put("age", "2630");
+        sr.put("salary", "46K50K");
+        StatisticalModeling sm  = new StatisticalModeling(csv, sr);
         System.out.println(" ");
         
     }
