@@ -37,6 +37,10 @@ public class Case {
         StatisticalModeling sm  = new StatisticalModeling(csv, sr);
         System.out.println(" ");
         
+        System.out.println("*** ID3 ***");
+        new ID3(csv);
+        
+        
     }
     
 }

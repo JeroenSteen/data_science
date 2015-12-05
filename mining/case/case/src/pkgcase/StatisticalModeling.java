@@ -12,6 +12,8 @@ public class StatisticalModeling {
     public static String target;
     public static ArrayList<String> targetValues;
     public static HashSet<String> targetFactors;
+    public static Map targetCounts;
+    public static Map targetProbs;
     
     //Constructor for Statistical Modeling
     public StatisticalModeling(CsvObject csv, Map sr) {
@@ -27,14 +29,21 @@ public class StatisticalModeling {
         Map counts          = countAssociations(predictors, csv);
         System.out.println("associations counts: "+counts);
         Map maxs            = countTargets(csv);
+        this.targetCounts   = maxs;
         System.out.println("target counts: "+maxs);
-        Map probs           = probAssociations(counts, maxs, csv); 
+        
+        Map probs           = probAssociations(counts, this.targetCounts, csv); 
         System.out.println("associations probs: "+probs);
         System.out.println(" ");
+        
+        Map mprobs          = countTargetProbs(maxs);
+        this.targetProbs    = mprobs;
+        System.out.println("target probs: "+mprobs);
         
         //Statistical record to find his Target value
         System.out.println("statistical record: "+sr);
         Map al              = allLikelihoods(sr, probs);
+        System.out.println("likelihoods: "+al);
         
     }
     
@@ -179,15 +188,33 @@ public class StatisticalModeling {
         return counts;
     }
     
+    //Find the probability for each target
+    public Map countTargetProbs(Map targets) {
+        float total = 0.0f;
+        
+        //Loop all target counts: Calculate total
+        for (Object t : targets.keySet()) {
+            //Found target count
+            total = total + (float)(int)targets.get(t);
+        }
+        
+        //Loop all target counts: Calculate prob per Target
+        for (Object t : targets.keySet()) {
+            targets.put(t, (float)(int)targets.get(t) / total);
+        }
+        
+        return targets;
+    }
+    
     //Probability from all Predictors their Factor vs Target Factor occurrences
     public Map probAssociations(Map counts, Map maxs, CsvObject csv) {
         //Make a map for the probs
         Map probs = new HashMap();
         
-        
         //Loop all target counts
         for (Object t : maxs.keySet()) {
             float max = (float)(int)maxs.get(t);
+            System.out.println(max);
             
             //Loop all predictors..
             for (Object p : counts.keySet()) {
@@ -230,9 +257,18 @@ public class StatisticalModeling {
                         probs.put(p, probsP);
                     } else {
                         //Predictor is known
-                        Map probsP = (Map)probs.get(p);                    
-                        //Make a factor map
-                        Map probsF = new HashMap();
+                        Map probsP = (Map)probs.get(p);
+                        
+                        Map probsF;
+                        //Factor is unknown
+                        if(probsP.get(f) == null){
+                            //Make a factor map
+                            probsF = new HashMap();
+                        } else {
+                            //Get the factor map
+                            probsF = (Map)probsP.get(f);
+                        }
+                        
                         //Place for target: probability
                         probsF.put(t, probability);
                         //Place factor map in predictor map
@@ -241,12 +277,20 @@ public class StatisticalModeling {
                         //Finally place predictor map in probs
                         probs.put(p, probsP);
                     }
-                    
                 }     
             }
         }
          
         return probs;
+    }
+    
+    public float laplaceEstimator(float t, float n) {
+        //t = counter/teller
+        //n = denominator/noemer
+        //u = small constant
+        float u = 1;
+        
+        return (t + u/3) / (n + u);
     }
     
     public Map allLikelihoods(Map sr, Map probs) {
@@ -264,10 +308,40 @@ public class StatisticalModeling {
             HashSet<String> targetFactors = this.targetFactors;
             //Loop all target factors
             for(String targetFactor: targetFactors) {
-                //Loop all probs
-                for (Object p : probs.keySet()) {
-                    //likelihood of target factor: p * p * p * overal fraction of target factor
-                    System.out.println("likelihood of: "+f+" "+targetFactor);
+                                
+                //Loop all predictors
+                for (Object ps : probs.keySet()) {
+                    Map psm = (Map)probs.get(ps);
+                    
+                    //Loop all factors
+                    for (Object fs : psm.keySet()) {
+                        Map fsm = (Map)psm.get(fs);
+                        
+                        //System.out.println(fsm);
+                        if(fsm.get(targetFactor) != null) {
+                            float tsm = (float)fsm.get(targetFactor);
+                            if(tsm == 0) {
+                                float targetCount = (float)this.targetCounts.get(targetFactor);
+                                tsm = this.laplaceEstimator(tsm, targetCount);
+                            }
+                            
+                            //We found values that match the record
+                            if(factor.equals(ps) && fvalue.equals(fs)) {
+                                //So we found the prob
+                                //System.out.println(factor+" "+fvalue+": "+targetFactor+": "+tsm);
+                                //Current target is unknown
+                                if(al.get(targetFactor) == null) {
+                                    //System.out.println("Unknown");
+                                    al.put(targetFactor, tsm);
+                                } else {
+                                    //System.out.println("Known");
+                                    //Known..
+                                    al.put(targetFactor, (float)al.get(targetFactor) * tsm);
+                                }
+                            }
+                            
+                        }
+                    }
                 }
             }
         }

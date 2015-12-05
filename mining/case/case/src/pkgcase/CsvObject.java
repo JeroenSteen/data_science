@@ -17,6 +17,7 @@ import java.util.HashSet;
 public class CsvObject {
     
     public static String[] headers;
+    public static String[] predictors;
     public static String target;
     public static ArrayList<String> targetValues;
     public static HashSet<String> targetFactors;
@@ -29,11 +30,14 @@ public class CsvObject {
             
             //Construct a CSV object
             CsvReader csv = new CsvReader("verkoopCount.csv");
-
+            
             //Read the headers
             csv.readHeaders();
             this.headers = csv.getHeaders();
             System.out.println("headers: "+Arrays.toString(this.headers));
+            
+            //Find predictors
+            this.predictors = Arrays.copyOfRange(headers, 0, headers.length-1);
             
             //Find target column, last one
             this.target = headers[headers.length - 1];
