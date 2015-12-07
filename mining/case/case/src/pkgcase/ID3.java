@@ -166,19 +166,47 @@ public class ID3 {
         System.out.println("associations: "+associations);
     }
     
-    public Map cloneAssociations() {
-        Map clone = new HashMap();
+    public HashMap cloneAssociations() {
+        HashMap clone = new HashMap();
         HashSet<String> targetFactors = getHeaderFactors(target);
         
         //Find predictors
         for (String p : predictors) {
             HashSet<String> pfs = getHeaderFactors(p);
             Map am = (Map)associations.get(p);
+            //Loop predictor factors
             for (String pf : pfs) {
                 Map fm = (Map)am.get(pf);
+                //Loop target factors
                 for (String t : targetFactors) {
                     if(fm.get(t) != null) {
                         float tm = (float)fm.get(t);
+                        
+                        //Predictor does not exist in clone
+                        if(clone.get(p) == null) {
+                            //Make new predictor map for clone
+                            Map pc = new HashMap();
+                            Map fc = new HashMap();
+
+                            pc.put(pf, fc);
+                            fc.put(t, tm);
+                            //Put new predictor map in clone
+                            clone.put(p, pc);
+                        } else {
+                            Map pc = (Map)clone.get(p);
+                            if(pc.get(pf) == null) {
+                                Map fc = new HashMap();
+                                fc.put(t, tm);
+                                
+                                pc.put(pf, fc);
+                                clone.put(p, pc);
+                            } else {
+                                Map fc = (Map)pc.get(pf);
+                                fc.put(t, tm);
+                                //Put new predictor map in clone
+                                clone.put(p, pc);
+                            }
+                        } 
                     }
                 }
             }
@@ -191,11 +219,11 @@ public class ID3 {
         Sum factor:
         predictor => factor => sum per target factor associations
         */
-        HashMap sumPerFactorAssociations = new HashMap();
+        HashMap sumPerFactorAssociations = cloneAssociations();
         //sumPerFactorAssociations = (HashMap)associations.clone();
         //sumPerFactorAssociations.putAll(associations);
-        sumPerFactorAssociations = associations;
-        System.out.println("associations copy: "+sumPerFactorAssociations);
+        //sumPerFactorAssociations = associations;
+        //System.out.println("associations copy: "+sumPerFactorAssociations);
         
         //Loop all predictors
         for (String p : predictors) {
@@ -257,26 +285,56 @@ public class ID3 {
         1 / (sumpfa) * ( - pfa1 * 2LOG(pfa1/sumpfa) - pfa2  * 2LOG(pfa2/sumpfa))
         */
         //Loop all predictors
-        for (String p : predictors) {  
+        for (String p : predictors) {
+            //System.out.println(p);
+            
             //Find predictor factors
             HashSet<String> predictorFactors = getHeaderFactors(p);
             //Loop all predictor factors
             for (String pf : predictorFactors) {
+                //System.out.println(pf);
+                HashMap pm          = (HashMap)associations.get(p);
+                Map pfm             = (Map)pm.get(pf);
+                
+                Map assocs      = (Map)sumPerFactorAssociations.get(p);
+                Map fassocs     = (Map)assocs.get(pf);
+                float sumpfa = 0.0f;
+                if(fassocs.get("sum") != null) {
+                    sumpfa    = (float)fassocs.get("sum");
+                }
+                
+                ArrayList<Float> pfas = new ArrayList<Float>();
                 //Loop all target factors
                 for (String tf : targetFactors) {
+                    //Per predictor factor with target association
+                    float pfa = 0f;
+                    if(pfm.get(tf) != null) {
+                        pfa         = (float)pfm.get(tf);
+                    }
                     
-                    
-                    //TODO: fix referencing issue
-                    HashMap pm          = (HashMap)associations.get(p);
-                    Map pfm             = (Map)pm.get(pf);
-                    System.out.println("pm: "+pm); 
-                    
-                    Map sumpfam         = (Map)sumPerFactorAssociations.get(p);
-                    //float sumpfa    = (float)sumpfam.get("sum");
-                    //System.out.println("sumpfam: "+sumpfam);  
+                    //pfa1 * 2LOG(pfa1/sumpfa)
+                    //System.out.println(pfa +" "+sumpfa+" "+Math.log(2));
+                    pfas.add((Float)pfa);
                 }
+                
+                System.out.println(calcInfo(pfas,sumpfa));
+                
+                //System.out.println(1 / sumpfa * ( - pfa1 * 2LOG(pfa1/sumpfa) - pfa2  * 2LOG(pfa2/sumpfa)));
             }
         }
+       
+    }
+    
+    public float calcInfo(ArrayList<Float> pfas, float sumpfa) {
+        //System.out.println(1 / sumpfa * ( - pfa1 * 2LOG(pfa1/sumpfa) - pfa2  * 2LOG(pfa2/sumpfa)));
+        float info      = 1 / sumpfa;
+        float infas     = 0.0f;
+        
+        for (Float pfa : pfas) {
+            infas = infas - pfa * ((float)(Math.log(pfa/sumpfa) / Math.log(2)));
+	}
+
+        return info * infas;
     }
     
 }
