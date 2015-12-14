@@ -38,7 +38,9 @@ public class Case {
         System.out.println(" ");
         
         System.out.println("*** ID3 ***");
-        new ID3(csv);
+        //new ID3(csv);
+        
+        new DecisionTree(csv);
         
         
     }
