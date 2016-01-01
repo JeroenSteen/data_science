@@ -10,25 +10,31 @@ import java.util.Map;
 
 public class DecisionTree {
     
+    public CsvObject CsvObject;
     public String[] predictors;
     public String target;
     public HashSet<String> targetFactors;
-    public HashMap associations;
+    public HashMap associations, tree;
+    public String yfactor, nfactor;
     
     public DecisionTree(CsvObject csv) {
         predictors      = csv.predictors;
         target          = csv.target;
         targetFactors   = csv.targetFactors;
         
+        yfactor  = "veel";
+        nfactor  = "weinig";
         
         //Construct map for associations
         ConstructAssociations(csv);
         System.out.println("associations: "+associations);
         
+        
         //Calculate entropy of the target
-        double targetEntropy = TargetEntropy(csv, "veel", "weinig");
+        double targetEntropy = TargetEntropy(csv, yfactor, nfactor);
         System.out.println("target entropy: "+targetEntropy);
         System.out.println(" ");
+        
         
         //Construct map for all gains
         Map gs = new HashMap();
@@ -37,7 +43,7 @@ public class DecisionTree {
             System.out.println("predictor: "+p);
             
             //Entropy of predictor
-            double e    = PredictorEntropy(p, "veel", "weinig");
+            double e    = PredictorEntropy(p, yfactor, nfactor);
             //Gain of predictor
             double g    = Gain(targetEntropy, e);
             System.out.println(" ");
@@ -46,8 +52,16 @@ public class DecisionTree {
         }
         System.out.println("gains: "+gs);
         
-        DecisionNode(gs);
+        //Construct map for tree
+        tree = new HashMap();
+        //Find the best decision node
+        String dn = DecisionNode(gs);
+        tree.put(dn, new HashMap());
         
+        //Pass in the best decision node
+        AttributeEntropy((Map)associations.get(dn), dn, yfactor, nfactor);
+        
+        System.out.println("tree: "+tree);
     }
     
     public void ConstructAssociations(CsvObject csv) {
@@ -207,6 +221,157 @@ public class DecisionTree {
         return entropysum;
     }
     
+    //Entropy of target and predictor attributes associations
+    public double AttributeEntropy(Map pm, String p, String ty, String tn) {
+        //Construct map for factors
+        HashSet factors = new HashSet();
+        
+        //Find target values
+        Map possitives  = (Map)pm.get(ty);   
+        Map negatives   = (Map)pm.get(tn);
+        
+        //Find total sum
+        double totalsum = (double)0;      
+        //Loop all target factors
+        for(String t: targetFactors) {
+            //Find target map
+            Map tm = (Map)pm.get(t);
+            //Merge to make factors complete
+            factors.addAll(tm.keySet());
+            //Loop all factors
+            for(Object f: tm.keySet()){
+                totalsum = totalsum + (double)tm.get(f);
+            }
+        }
+        
+        //Entropy sum
+        double entropysum = (double)0;
+        //Loop all factors to calculate each of his probability * entropy
+        for(Object f: factors) {
+            double possitive    = (double)0;
+            double negative     = (double)0;
+            
+            try {
+                possitive    = (double)possitives.get(f);
+            } catch (Exception e) {
+                //System.out.println("No value for "+f); 
+            }
+            try {
+                negative    = (double)negatives.get(f);
+            } catch (Exception e) {
+                //System.out.println("No value for "+f);
+            }
+            
+            double sum          = possitive + negative;
+            double prob         = sum  / totalsum;
+            double entropy      = Entropy((double)possitive,(double)negative);
+            double e            = prob * entropy;
+            entropysum          = entropysum + e;
+            
+            System.out.println("factor: "+f+" possitive: "+possitive+" negative: "+negative+" entropy: "+entropy);
+            //Pure entropy
+            if(!(entropy > 0)){
+                Map root = (Map)tree.get(p);
+                if(possitive > negative) {
+                    root.put(f, yfactor); 
+                }
+                if(possitive < negative) {
+                    root.put(f, nfactor); 
+                }                         
+            } else {
+                //Not pure: systems all factors compare with other predictors to find age
+                Split(p, (String)f);
+            }
+        }
+        
+        return entropysum;
+    }
+    
+    //Not pure so needs splitting: predictor, impure factor
+    public void Split(String p, String f) {
+        //Predictor to research if it haves an association with the impure factor: systems, with the target factor
+        System.out.println("predictor "+p+" haves impure factor: "+f);
+        Map splitinfo = new HashMap();
+        
+
+        //Construct: loop all predictors
+        for(String pr: predictors) {
+            //Predictor is not the predictor that contains the impure factor
+            if(pr != p) {
+                //Predictor
+                Map pm = new HashMap();
+                //Loop all records
+                for(Map r: CsvObject.records) {
+                    //Find all values of impure factor
+                    Map ifv = new HashMap();
+                    for(Map r2: CsvObject.records) {
+                        ifv.put(r2.get(p), (double)0);
+                    }
+                    
+                    //Predictor
+                    pm.put(r.get(pr), ifv);
+                    //Predictor with factor
+                    splitinfo.put(pr, pm);                   
+                }
+                
+            }    
+        }
+        System.out.println("splitinfo 1: "+splitinfo);
+        
+        
+        //Count: loop all predictors
+        for(String pr: predictors) {
+            //Predictor is not the predictor that contains the impure factor
+            if(pr != p) {
+                
+                //Predictor
+                Map pm = (Map)splitinfo.get(pr);
+                //Loop all values of factor current predictor
+                for(Object factorValue: pm.keySet()) {
+                    //Loop all records
+                    for(Map r: CsvObject.records) {
+                        
+                        //Same
+                        if(factorValue.equals(r.get(pr))) {
+                            
+                            System.out.println("predictor with impure factor: "+p);
+                            System.out.println("impure factor: "+r.get(p));
+                            
+                            System.out.println("check other predictor: "+pr);
+                            System.out.println("association factor: "+factorValue);                            
+                            
+                            //Find association, add one
+                            Map pf = (Map)pm.get(factorValue);
+                            //Map pfv = (Map)pf.get(r.get(r));
+                            System.out.println("associations for "+factorValue+": "+pf);
+                            
+                            
+                            //Current appearance
+                            double pfvtmp = (double)pf.get(r.get(p));
+                            ++pfvtmp;
+                            System.out.println(pfvtmp);
+                            
+                            
+                            //Save it
+                            pf.put(r.get(p), pfvtmp);
+                            pm.put(factorValue, pf);
+                            //pm.put(factorValue, pf);                                                    
+                            splitinfo.put(p, pm);
+                            
+                                                       
+                            System.out.println(" ");                            
+                            
+                        }
+                        
+                    }
+                }
+                
+            }
+        }
+        
+        System.out.println("splitinfo 2: "+splitinfo);
+    }
+    
     //Information gain IG(A) is the measure of the difference in entropy from before to after the set S is split on an attribute A.
     //In other words, how much uncertainty in S was reduced after splitting set S on attribute A.
     public double Gain(double targetEntropy, double newEntropy) {
@@ -218,16 +383,17 @@ public class DecisionTree {
     }
     
     //Find the best decision node
-    public void DecisionNode(Map gains) {
+    public String DecisionNode(Map gains) {
         //Find the highest uncertainty reducement
         double reducement = (double)Collections.max(gains.values());
-        
         //Loop all gains    
         for (Object g : gains.keySet()) {
-            if (gains.get(g).equals(reducement)) {
-                System.out.println("decision node: "+g);
-            }
+            
+            //Found the best decision node
+            if (gains.get(g).equals(reducement)) return (String)g;
         }
+        //Default none
+        return "";
     }
     
     //The logarithm of a number is the exponent to which another fixed value, the base, must be raised to produce that number.
