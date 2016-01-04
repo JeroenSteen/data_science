@@ -292,84 +292,151 @@ public class DecisionTree {
         //Predictor to research if it haves an association with the impure factor: systems, with the target factor
         System.out.println("predictor "+p+" haves impure factor: "+f);
         Map splitinfo = new HashMap();
+        Map root = (Map)tree.get(p);
         
-
         //Construct: loop all predictors
         for(String pr: predictors) {
             //Predictor is not the predictor that contains the impure factor
             if(pr != p) {
                 //Predictor
                 Map pm = new HashMap();
-                //Loop all records
-                for(Map r: CsvObject.records) {
-                    //Find all values of impure factor
-                    Map ifv = new HashMap();
-                    for(Map r2: CsvObject.records) {
-                        ifv.put(r2.get(p), (double)0);
-                    }
-                    
-                    //Predictor
-                    pm.put(r.get(pr), ifv);
-                    //Predictor with factor
-                    splitinfo.put(pr, pm);                   
-                }
                 
+                //All attributes
+                Map am = new HashMap();
+                for(Map r: CsvObject.records) {
+                    //System.out.println("pr: "+r.get(pr));
+                    //All target factors
+                    Map tfs = new HashMap();
+                    for(String tf: targetFactors) {
+                        tfs.put(tf, (double)0);
+                    }
+                    am.put(r.get(pr), tfs);
+                }
+                //Other predictors
+                splitinfo.put(pr, am);            
+                //sales,systems,marketing > status,age,salary > attributes > target factors
             }    
         }
-        System.out.println("splitinfo 1: "+splitinfo);
+        //System.out.println("splitinfo 1: "+splitinfo);
         
         
         //Count: loop all predictors
         for(String pr: predictors) {
             //Predictor is not the predictor that contains the impure factor
             if(pr != p) {
-                
                 //Predictor
                 Map pm = (Map)splitinfo.get(pr);
-                //Loop all values of factor current predictor
-                for(Object factorValue: pm.keySet()) {
-                    //Loop all records
-                    for(Map r: CsvObject.records) {
-                        
-                        //Same
-                        if(factorValue.equals(r.get(pr))) {
+                
+                //Loop all records
+                for(Map r: CsvObject.records) {
+                    //Loop all target factors
+                    for(String tf: targetFactors) {
+                        //Target match
+                        if(r.get(target).equals(tf)) {
+                            //Current predictor
+                            //System.out.println("current predictor: "+r.get(pr));
+                            //Other attribute
+                            //System.out.println("other attribute: "+r.get(pr));
+                            //Current target
+                            //System.out.println("current target: "+r.get(target));
                             
-                            System.out.println("predictor with impure factor: "+p);
-                            System.out.println("impure factor: "+r.get(p));
+                            //Attribute in predictor map
+                            Map am = (Map)pm.get(r.get(pr));
+                            //System.out.println(am);
                             
-                            System.out.println("check other predictor: "+pr);
-                            System.out.println("association factor: "+factorValue);                            
-                            
-                            //Find association, add one
-                            Map pf = (Map)pm.get(factorValue);
-                            //Map pfv = (Map)pf.get(r.get(r));
-                            System.out.println("associations for "+factorValue+": "+pf);
-                            
-                            
-                            //Current appearance
-                            double pfvtmp = (double)pf.get(r.get(p));
-                            ++pfvtmp;
-                            System.out.println(pfvtmp);
-                            
+                            //Count it
+                            double amt = (double)am.get(tf);
+                            ++amt;
                             
                             //Save it
-                            pf.put(r.get(p), pfvtmp);
-                            pm.put(factorValue, pf);
-                            //pm.put(factorValue, pf);                                                    
-                            splitinfo.put(p, pm);
-                            
-                                                       
-                            System.out.println(" ");                            
-                            
+                            am.put(tf, amt);
+                            pm.put(r.get(pr), am);                                                 
+                            splitinfo.put(pr, pm); 
+                            //System.out.println(" ");
                         }
-                        
                     }
                 }
-                
             }
         }
         
-        System.out.println("splitinfo 2: "+splitinfo);
+        System.out.println("splitinfo: "+splitinfo);
+        //systems > status|age|salary > attributes > targets
+        
+        
+        Map mm = new HashMap();
+            
+        //Predictors
+        for (Object pk : splitinfo.keySet()) {
+            Map sm = new HashMap();
+            
+            Map pm = (Map)splitinfo.get(pk);
+            double totalsum = (double)0;
+            double entropysum = (double)0;
+            
+            //Attributes
+            for(Object ak: pm.keySet()) {
+                Map am = (Map)pm.get(ak);
+                
+                double possitive = (double)0;
+                double negative = (double)0;
+                
+                try {
+                    possitive    = (double)am.get(yfactor);
+                } catch (Exception e) {
+                    //System.out.println("No value for "+f); 
+                }
+                try {
+                    negative    = (double)am.get(nfactor);
+                } catch (Exception e) {
+                    //System.out.println("No value for "+f);
+                }
+                
+                double sum          = possitive + negative;
+                totalsum = totalsum + sum;
+            }    
+            
+            //Attributes
+            for(Object ak: pm.keySet()) {
+                Map am = (Map)pm.get(ak);
+                
+                double possitive = (double)0;
+                double negative = (double)0;
+                
+                try {
+                    possitive    = (double)am.get(yfactor);
+                } catch (Exception e) {
+                    //System.out.println("No value for "+f); 
+                }
+                try {
+                    negative    = (double)am.get(nfactor);
+                } catch (Exception e) {
+                    //System.out.println("No value for "+f);
+                }
+                
+                double sum          = possitive + negative;
+                double prob         = sum  / totalsum;
+                double entropy      = Entropy((double)possitive,(double)negative);
+                double e            = prob * entropy;
+                entropysum          = entropysum + e;
+
+                //System.out.println("predictor: "+pk+", attribute: "+ak+", possitive: "+possitive+", negative: "+negative+", entropy: "+entropy);
+                //Pure entropy
+                if(!(entropy > 0)){
+                    if(possitive > negative) {
+                        sm.put(ak, yfactor);
+                    } else {
+                        sm.put(ak, nfactor);
+                    }
+                }
+                //System.out.println("sm: "+sm);
+                //System.out.println(Gain((double)1, entropysum));
+
+                mm.put(pk, sm);
+                root.put(f, mm);  
+                
+            } 
+        }
+              
     }
     
     //Information gain IG(A) is the measure of the difference in entropy from before to after the set S is split on an attribute A.
