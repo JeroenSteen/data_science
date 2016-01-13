@@ -29,7 +29,7 @@ public class CsvObject {
         try {
             
             //Construct a CSV object
-            CsvReader csv = new CsvReader("verkoopCount.csv");
+            CsvReader csv = new CsvReader(csvPath);
             
             //Read the headers
             csv.readHeaders();

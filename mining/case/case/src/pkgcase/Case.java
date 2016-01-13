@@ -16,7 +16,7 @@ public class Case {
     
     public void run() {
         
-        
+        //Witten
         String csvPath          = "verkoopCount.csv";
         
         System.out.println("*** ZeroR ***");
@@ -39,8 +39,17 @@ public class Case {
         
         System.out.println("*** ID3 ***");
         //new ID3(csv);
-        
         new DecisionTree(csv);
+        System.out.println(" ");
+        
+        //Data smart        
+        String csvRetail        = "retail.csv";
+        System.out.println("*** Genetic ***");
+        CsvObject csvr          = new CsvObject(csvRetail);
+        
+        new Genetic(csvr);
+        
+        
         
         
     }
