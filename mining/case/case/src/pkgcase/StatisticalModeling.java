@@ -47,6 +47,14 @@ public class StatisticalModeling {
         
     }
     
+    /*
+    * Numeric attibutes
+    
+    normalize atributes : gemiddelde en standaard afwijking berekenen variantie= (x- gemiddelde)^2/ (N-1) ; N=aantal
+    
+    standardlize = (x - minimum)/ (maximum - minimum); 
+    */
+    
     public Map constructPredictors(CsvObject csv) {
         //Construct predictors
         Map predictors      = new HashMap();

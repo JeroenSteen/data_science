@@ -20,3 +20,5 @@ vignettes/*.pdf
 /mining/converter
 /mining/case/case/nbproject/private/
 /mining/case/case/build/
+/mining/slides
+/mining/smart
