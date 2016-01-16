@@ -1,6 +1,7 @@
 package pkgcase;
 
 //Utils
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,9 @@ public class StatisticalModeling {
         this.targetFactors  = csv.targetFactors;
         
         Map predictors      = constructPredictors(csv);
+        //Handle numeric values
+        Map handledPredictors = handleNumerics(predictors, csv);
+        
         Map counts          = countAssociations(predictors, csv);
         System.out.println("associations counts: "+counts);
         Map maxs            = countTargets(csv);
@@ -46,14 +50,6 @@ public class StatisticalModeling {
         System.out.println("likelihoods: "+al);
         
     }
-    
-    /*
-    * Numeric attibutes
-    
-    normalize atributes : gemiddelde en standaard afwijking berekenen variantie= (x- gemiddelde)^2/ (N-1) ; N=aantal
-    
-    standardlize = (x - minimum)/ (maximum - minimum); 
-    */
     
     public Map constructPredictors(CsvObject csv) {
         //Construct predictors
@@ -89,6 +85,42 @@ public class StatisticalModeling {
                     }
 
                 }
+            }
+        }
+        return predictors;
+    }
+    
+    public Map handleNumerics(Map predictors, CsvObject csv) {
+        /*
+        * Numeric attibutes
+        normalize atributes : gemiddelde en standaard afwijking berekenen variantie= (x- gemiddelde)^2/ (N-1) ; N=aantal
+        standardlize = (x - minimum)/ (maximum - minimum); 
+        */
+
+        for (Object p : predictors.keySet()) {
+            for(String targetFactor: this.targetFactors) {
+                //System.out.println("size: "+csv.records.size());
+                double[] targetHandles      = new double[csv.records.size()];
+                int targetHandleIterator    = 0;
+                for(Map r: csv.records) {
+                    if(r.get(target).equals(targetFactor)) {
+                        try {
+                            //Is an integer..
+                            int num = Integer.parseInt((String)r.get(p));
+                            ++targetHandleIterator;
+                            //System.out.println("handle iterator: "+targetHandleIterator);
+                            
+                            targetHandles[targetHandleIterator] = num;
+                            //System.out.println("handle: "+r.get(p)+" "+targetFactor+", number");
+                        } catch (NumberFormatException e) {
+                            //Not an integer..
+                        }
+                    }
+                }
+                //System.out.println(p+" handles: "+Arrays.toString(targetHandles));
+                System.out.println("mean of handles: "+mean(targetHandles));
+                System.out.println("sd of handles: "+deviation(targetHandles));
+                
             }
         }
         return predictors;
@@ -356,6 +388,25 @@ public class StatisticalModeling {
         
         //Return likelihoods
         return al;
+    }
+    
+    public static double mean(double[] m) {
+        double sum = 0;
+        for (int i = 0; i < m.length; i++) {
+            sum += m[i];
+        }
+        return sum / m.length;
+    }
+    
+    public static double deviation(double[] nums) {
+	double mean = mean(nums);
+	double squareSum = 0;
+
+	for (int i = 0; i < nums.length; i++) {
+		squareSum += Math.pow(nums[i] - mean, 2);
+	}
+
+	return Math.sqrt((squareSum) / (nums.length - 1));
     }
    
     
