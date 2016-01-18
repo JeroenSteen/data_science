@@ -46,9 +46,19 @@ public class DecisionTree {
             double e    = PredictorEntropy(p, yfactor, nfactor);
             //Gain of predictor
             double g    = Gain(targetEntropy, e);
+            //Split info of predictor
+            double si   = SplitInfo(p, csv);
+            System.out.println("splitinfo: "+si);
+            //Gain ratio of predictor
+            double gr   = GainRatio(g, si);
+            System.out.println("gain ratio: "+gr);
+            
             System.out.println(" ");
             
+            //Gain or gain ratio!!!
+            //gs.put(p, g);
             gs.put(p, g);
+            
         }
         System.out.println("gains: "+gs);
         
@@ -291,7 +301,7 @@ public class DecisionTree {
     public void Split(String p, String f) {
         //Predictor to research if it haves an association with the impure factor: systems, with the target factor
         System.out.println("predictor "+p+" haves impure factor: "+f);
-        Map splitinfo = new HashMap();
+        Map info = new HashMap();
         Map root = (Map)tree.get(p);
         
         //Construct: loop all predictors
@@ -313,7 +323,7 @@ public class DecisionTree {
                     am.put(r.get(pr), tfs);
                 }
                 //Other predictors
-                splitinfo.put(pr, am);            
+                info.put(pr, am);            
                 //sales,systems,marketing > status,age,salary > attributes > target factors
             }    
         }
@@ -325,7 +335,7 @@ public class DecisionTree {
             //Predictor is not the predictor that contains the impure factor
             if(pr != p) {
                 //Predictor
-                Map pm = (Map)splitinfo.get(pr);
+                Map pm = (Map)info.get(pr);
                 
                 //Loop all records
                 for(Map r: CsvObject.records) {
@@ -351,7 +361,7 @@ public class DecisionTree {
                             //Save it
                             am.put(tf, amt);
                             pm.put(r.get(pr), am);                                                 
-                            splitinfo.put(pr, pm); 
+                            info.put(pr, pm); 
                             //System.out.println(" ");
                         }
                     }
@@ -359,17 +369,17 @@ public class DecisionTree {
             }
         }
         
-        System.out.println("splitinfo: "+splitinfo);
+        System.out.println("info: "+info);
         //systems > status|age|salary > attributes > targets
         
         
         Map mm = new HashMap();
             
         //Predictors
-        for (Object pk : splitinfo.keySet()) {
+        for (Object pk : info.keySet()) {
             Map sm = new HashMap();
             
-            Map pm = (Map)splitinfo.get(pk);
+            Map pm = (Map)info.get(pk);
             double totalsum = (double)0;
             double entropysum = (double)0;
             
@@ -447,6 +457,56 @@ public class DecisionTree {
         System.out.println("gain: "+targetEntropy+" - "+newEntropy+" = "+gain);
         
         return gain;
+    }
+    
+    //Split info for a certain predictor
+    public double SplitInfo(String predictor, CsvObject csv) {
+        HashMap factors = new HashMap();
+        
+        //Loop all records
+        for(Map r: csv.records) {
+            //Factor attribute
+            String factor = (String)r.get(predictor);
+            //Current factor not set
+            if(factors.get(factor) == null){
+                //First occurence of factor
+                factors.put(factor, (double)1);
+            } else {
+                //Current factor is set
+                double factorcounter = (double)factors.get(factor);
+                //Increment the factor and save
+                factors.put(factor, ++factorcounter);
+            }
+        }
+        System.out.println("splitinfo factors: "+factors);
+        
+        //Sum of all occurences of all targets and attributes of predictor
+        double sumfactors = (double)0;
+        for (Object f : factors.keySet()) {
+            sumfactors += (double)factors.get(f);
+        }
+        
+        //Find for each attribute for all targets the occurence
+        // 1 / (E8+E9+E10) *( -E8 * LOG(E8/ (E8+E9+E10);2) - E9  * LOG(E9/(E8+E9+E10);2)  - E10  * LOG(E10/(E8+E9+E10);2))
+
+        double esum = (double)0;
+        for (Object f : factors.keySet()) {
+            //Occurences of factor
+            double sumfactor    = (double)factors.get(f);
+            double prob         = sumfactor / sumfactors;
+            
+            double e            = - sumfactor * Log(prob,2);
+            esum                = esum + e;
+        }
+        
+        return 1 / sumfactors * esum;
+        // 1 / sumfactors * ( -e8 * Log((double)e8/sumfactors,2) -e9  * Log((double)e9/sumfactors,2)  -e10  * Log((double)e10/sumfactors,2));
+
+    }
+        
+    //Gain ratio for a certain predictor, based on gain and splitinfo
+    public double GainRatio(double gain, double splitinfo) {
+        return gain / splitinfo;
     }
     
     //Find the best decision node
